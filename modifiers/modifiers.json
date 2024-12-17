@@ -1,0 +1,919 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+      "title": "Modifiers API",
+      "version": "1.0.0",
+      "description": "API for managing restaurant menu modifiers and their options",
+      "contact": {
+        "email": "kesavan.m@zohocorp.com"
+      }
+    },
+    "servers": [
+      {
+        "url": "https://zakya.localzoho.com/posapi/api/v1/",
+        "description": "Zakya POS API domain",
+        "variables": {}
+      }
+    ],
+    "components": {
+      "schemas": {
+        "CreateModifierGroupRequest": {
+          "type": "object",
+          "required": [
+            "name",
+            "options",
+            "selection_type",
+            "min_selection",
+            "max_selection"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "description": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "options": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "food_type",
+                  "price",
+                  "quantity",
+                  "unit",
+                  "is_default"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "food_type": {
+                    "type": "string",
+                    "enum": [
+                      "veg",
+                      "non-veg",
+                      "egg",
+                      "not-applicable"
+                    ]
+                  },
+                  "price": {
+                    "type": "number",
+                    "format": "double"
+                  },
+                  "associated_item": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "quantity": {
+                    "type": "integer"
+                  },
+                  "unit": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "is_default": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            },
+            "selection_type": {
+              "type": "string",
+              "enum": [
+                "optional",
+                "mandatory"
+              ]
+            },
+            "min_selection": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "max_selection": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "ModifiersResponse": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            },
+            "options": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "food_type": {
+                    "type": "string",
+                    "enum": [
+                      "veg",
+                      "non-veg",
+                      "egg",
+                      "not-applicable"
+                    ]
+                  },
+                  "price": {
+                    "type": "number",
+                    "format": "double"
+                  },
+                  "associated_item": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "quantity": {
+                    "type": "integer"
+                  },
+                  "unit": {
+                    "type": "integer",
+                    "format": "int64"
+                  }
+                }
+              }
+            },
+            "selection_type": {
+              "type": "string",
+              "enum": [
+                "optional",
+                "mandatory"
+              ]
+            }
+          }
+        },
+        "ErrorResponse": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            },
+            "details": {
+              "type": "object"
+            }
+          }
+        },
+        "ModifierOptionTransactionError": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string",
+              "example": "5005"
+            },
+            "message": {
+              "type": "string",
+              "example": "Modifier options associated with a transaction cannot be deleted. However, you can mark the modifier option as inactive."
+            }
+          }
+        },
+        "MinModifierOptionError": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string",
+              "enum": [
+                "Please add at-least one modifier option."
+              ]
+            }
+          }
+        },
+        "MinActiveModifierOptionError": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string",
+              "example": "5006"
+            },
+            "message": {
+              "type": "string",
+              "example": "At least one modifier option should be active."
+            }
+          }
+        },
+        "MappingSuccessResponse": {
+          "type": "object",
+          "properties": {
+            "message": {
+              "type": "string",
+              "enum": [
+                "The selected modifier groups have been mapped to the items/categories"
+              ]
+            }
+          }
+        },
+        "MinMaxModifierOptionError": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string",
+              "example": "5001"
+            },
+            "message": {
+              "type": "string",
+              "example": "Number of active modifier options should be greater than the max. and min. options."
+            }
+          }
+        },
+        "MaxMinValueError": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string",
+              "example": "5002"
+            },
+            "message": {
+              "type": "string",
+              "example": "Minimum value of options to be selected cannot be greater than the maximum value."
+            }
+          }
+        },
+        "MinValueZeroError": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string",
+              "example": "5003"
+            },
+            "message": {
+              "type": "string",
+              "example": "Minimum number of options cannot be 0."
+            }
+          }
+        },
+        "NoModifierOptionError": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string",
+              "example": "5004"
+            },
+            "message": {
+              "type": "string",
+              "example": "Please add at-least one modifier option."
+            }
+          }
+        }
+      },
+      "securitySchemes": {
+        "Bearer": {
+          "type": "apiKey",
+          "name": "api_key",
+          "in": "header"
+        }
+      },
+      "parameters": {
+        "organizationId": {
+          "name": "organization_id",
+          "in": "query",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "description": "ID of the organization"
+        },
+        "paginationLimit": {
+          "name": "limit",
+          "in": "query",
+          "schema": {
+            "type": "integer",
+            "default": 20,
+            "maximum": 100
+          }
+        },
+        "paginationPage": {
+          "name": "page",
+          "in": "query",
+          "schema": {
+            "type": "integer",
+            "default": 1
+          }
+        }
+      }
+    },
+    "paths": {
+      "/modifiers": {
+        "post": {
+          "summary": "Creates a Modifier Group",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateModifierGroupRequest"
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Modifier group created",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ModifiersResponse"
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Bad request",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "oneOf": [
+                      {
+                        "$ref": "#/components/schemas/MinMaxModifierOptionError"
+                      },
+                      {
+                        "$ref": "#/components/schemas/MaxMinValueError"
+                      },
+                      {
+                        "$ref": "#/components/schemas/MinValueZeroError"
+                      },
+                      {
+                        "$ref": "#/components/schemas/NoModifierOptionError"
+                      },
+                      {
+                        "$ref": "#/components/schemas/ErrorResponse"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "parameters": [
+            {
+              "$ref": "#/components/parameters/organizationId"
+            }
+          ],
+          "description": "A Customization applied to a item is called modifier. it is also an collection of modifier options. \nFor example, Toppings is a modifier and the modifier options involved in it are Extra cheese, spiced panner, Black olive, etc."
+        },
+        "get": {
+          "summary": "List all modifier groups",
+          "description": "List all modifier groups with their options. The modifier options that are inactive will not be displayed individually, but will be included as '+<number> options'. For example, if a modifier group has 5 options - 3 active and 2 inactive, it is represented as 'option1, option2, option3, +2 options'",
+          "parameters": [
+            {
+              "$ref": "#/components/parameters/organizationId"
+            },
+            {
+              "$ref": "#/components/parameters/paginationLimit"
+            },
+            {
+              "$ref": "#/components/parameters/paginationPage"
+            },
+            {
+              "name": "status",
+              "in": "query",
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "inactive",
+                  "all"
+                ]
+              }
+            },
+            {
+              "name": "selection_type",
+              "in": "query",
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "optional",
+                  "mandatory"
+                ]
+              }
+            },
+            {
+              "name": "search",
+              "in": "query",
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "List of modifier groups",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/ModifiersResponse"
+                    }
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Bad request",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/modifiers/{id}": {
+        "get": {
+          "summary": "Get modifier group by ID",
+          "responses": {
+            "200": {
+              "description": "Modifier group details",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ModifiersResponse"
+                  }
+                }
+              }
+            }
+          },
+          "parameters": [
+            {
+              "$ref": "#/components/parameters/organizationId"
+            },
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "integer",
+                "format": "int64"
+              }
+            }
+          ]
+        },
+        "put": {
+          "summary": "Update modifier group",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModifiersResponse"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Modifier group updated",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ModifiersResponse"
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Bad request",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "oneOf": [
+                      {
+                        "$ref": "#/components/schemas/ErrorResponse"
+                      },
+                      {
+                        "$ref": "#/components/schemas/MinMaxModifierOptionError"
+                      },
+                      {
+                        "$ref": "#/components/schemas/MaxMinValueError"
+                      },
+                      {
+                        "$ref": "#/components/schemas/MinValueZeroError"
+                      },
+                      {
+                        "$ref": "#/components/schemas/NoModifierOptionError"
+                      },
+                      {
+                        "$ref": "#/components/schemas/MinActiveModifierOptionError"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "parameters": [
+            {
+              "$ref": "#/components/parameters/organizationId"
+            },
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "integer",
+                "format": "int64"
+              }
+            }
+          ]
+        },
+        "delete": {
+          "summary": "Delete modifier group",
+          "responses": {
+            "204": {
+              "description": "Modifier group deleted"
+            },
+            "400": {
+              "description": "Bad request",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ModifierOptionTransactionError"
+                  }
+                }
+              }
+            }
+          },
+          "parameters": [
+            {
+              "$ref": "#/components/parameters/organizationId"
+            },
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "integer",
+                "format": "int64"
+              }
+            }
+          ]
+        }
+      },
+      "/modifiers/bulk/status": {
+        "put": {
+          "summary": "Bulk update modifier status",
+          "description": "Update the status (activate/deactivate) of multiple modifier groups at once. If any records are already in the target status, no changes will be made to those records.",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "modifier_ids",
+                    "action"
+                  ],
+                  "properties": {
+                    "modifier_ids": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer",
+                        "format": "int64"
+                      }
+                    },
+                    "action": {
+                      "type": "string",
+                      "enum": [
+                        "activate",
+                        "deactivate"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Status updated successfully"
+            }
+          },
+          "parameters": [
+            {
+              "$ref": "#/components/parameters/organizationId"
+            }
+          ]
+        }
+      },
+      "/modifiers/bulk/delete": {
+        "delete": {
+          "summary": "Bulk delete modifiers",
+          "description": "Delete multiple modifier groups at once. Modifier groups associated with transactions cannot be deleted and will return an error. Consider marking them as inactive instead.",
+          "parameters": [
+            {
+              "$ref": "#/components/parameters/organizationId"
+            },
+            {
+              "name": "modifier_ids",
+              "in": "query",
+              "required": true,
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Modifiers deleted successfully"
+            },
+            "400": {
+              "description": "Bad request",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ModifierOptionTransactionError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/modifiers/bulk/mapToItems": {
+        "post": {
+          "summary": "Map modifiers to items",
+          "description": "Map selected modifier groups to specific items. This allows customization options to be added to menu items. Items that are not applicable for modifier mapping (like service items) will be skipped.",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "modifier_ids",
+                    "item_ids"
+                  ],
+                  "properties": {
+                    "modifier_ids": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer",
+                        "format": "int64"
+                      }
+                    },
+                    "item_ids": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer",
+                        "format": "int64"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Modifiers mapped to items successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/MappingSuccessResponse"
+                  }
+                }
+              }
+            }
+          },
+          "parameters": [
+            {
+              "$ref": "#/components/parameters/organizationId"
+            }
+          ]
+        }
+      },
+      "/modifiers/bulk/mapToCategories": {
+        "post": {
+          "summary": "Map modifiers to categories",
+          "description": "Map selected modifier groups to entire categories. When a modifier is mapped to a category, it is automatically associated with all items in that category. This provides an efficient way to manage modifiers for groups of related items.",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "modifier_ids",
+                    "category_ids"
+                  ],
+                  "properties": {
+                    "modifier_ids": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer",
+                        "format": "int64"
+                      }
+                    },
+                    "category_ids": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer",
+                        "format": "int64"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Modifiers mapped to categories successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/MappingSuccessResponse"
+                  }
+                }
+              }
+            }
+          },
+          "parameters": [
+            {
+              "$ref": "#/components/parameters/organizationId"
+            }
+          ]
+        }
+      },
+      "/modifiers/{id}/status/inactive": {
+        "put": {
+          "summary": "Deactivate a modifier group",
+          "description": "Mark a modifier group as inactive. Inactive modifier groups cannot be mapped to items and won't appear in POS applications.",
+          "parameters": [
+            {
+              "$ref": "#/components/parameters/organizationId"
+            },
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "integer",
+                "format": "int64"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Modifier group deactivated successfully"
+            },
+            "400": {
+              "description": "Bad request",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/MinActiveModifierOptionError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/modifiers/{id}/status/active": {
+        "put": {
+          "summary": "Activate a modifier group",
+          "description": "Mark a modifier group as active, making it available for mapping to items and visible in POS applications.",
+          "parameters": [
+            {
+              "$ref": "#/components/parameters/organizationId"
+            },
+            {
+              "name": "id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "integer",
+                "format": "int64"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Modifier group activated successfully"
+            }
+          }
+        }
+      },
+      "/modifiers/bulkfetch": {
+        "get": {
+          "summary": "List all modifier groups changed after a specified timestamp",
+          "description": "List all modifier groups with their options that have been changed after the specified timestamp. The modifier options that are inactive will not be displayed individually, but will be included as '+<number> options'.",
+          "parameters": [
+            {
+              "$ref": "#/components/parameters/organizationId"
+            },
+            {
+              "$ref": "#/components/parameters/paginationLimit"
+            },
+            {
+              "$ref": "#/components/parameters/paginationPage"
+            },
+            {
+              "name": "last_modified_time",
+              "in": "query",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "description": "The last_modified_time to filter the modified records"
+            },
+            {
+              "name": "status",
+              "in": "query",
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "inactive",
+                  "all"
+                ]
+              }
+            },
+            {
+              "name": "selection_type",
+              "in": "query",
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "optional",
+                  "mandatory"
+                ]
+              }
+            },
+            {
+              "name": "search",
+              "in": "query",
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "List of modified modifier groups",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/ModifiersResponse"
+                    }
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Bad request",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "Bearer": []
+      }
+    ],
+    "tags": [
+      {
+        "name": "Modifiers",
+        "description": "Modifiers as entity"
+      }
+    ]
+  }
+  
